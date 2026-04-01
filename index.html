@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premier Credit CS Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --orange: #f97316;
+            --orange-deep: #ea580c;
+            --orange-pale: #fff7ed;
+            --orange-glow: rgba(249,115,22,0.15);
+            --indigo: #3730a3;
+            --slate: #1e293b;
+            --slate-mid: #475569;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --card-shadow-lg: 0 20px 40px -8px rgba(0,0,0,0.12), 0 8px 16px -4px rgba(0,0,0,0.06);
+        }
+        body { font-family: 'DM Sans', sans-serif; background: var(--bg); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; }
+        .card { background: var(--white); border-radius: 24px; box-shadow: var(--card-shadow-lg); width: 100%; max-width: 480px; overflow: hidden; border: 1px solid var(--border); }
+        .header { background: linear-gradient(135deg, var(--slate) 0%, #2d3f58 100%); padding: 32px; color: white; text-align: center; }
+        .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); display: inline-block; margin-right: 6px; vertical-align: middle; }
+        .header span { font-size: 11px; font-weight: 600; letter-spacing: 2px; opacity: 0.8; text-transform: uppercase; }
+        .header h1 { font-family: 'Playfair Display', serif; font-size: 24px; margin-top: 8px; }
+        
+        .tabs { display: flex; background: #f1f5f9; padding: 6px; margin: 20px 32px 0; border-radius: 12px; }
+        .tab-btn { flex: 1; padding: 12px; font-size: 12px; font-weight: 600; color: var(--slate-mid); border: none; background: none; cursor: pointer; border-radius: 8px; transition: 0.2s; }
+        .tab-btn.active { background: var(--white); color: var(--orange); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        
+        .tab-content { display: none; padding: 24px 32px 32px; }
+        .tab-content.active { display: block; }
+        
+        .field-group { display: flex; flex-direction: column; gap: 20px; position: relative; }
+        .field { flex: 1; }
+        .field label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; color: var(--slate); letter-spacing: 0.5px; }
+        .field input { width: 100%; padding: 14px; border: 1.5px solid var(--border); border-radius: 12px; font-size: 16px; outline: none; transition: 0.2s; font-family: 'DM Sans', sans-serif; }
+        .field input:focus { border-color: var(--orange); box-shadow: 0 0 0 4px var(--orange-glow); }
+
+        /* Small Clear Button Styling */
+        .clear-container { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+        .btn-clear { background: #f1f5f9; color: var(--slate-mid); border: 1px solid var(--border); padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: 0.2s; }
+        .btn-clear:hover { background: #e2e8f0; color: var(--orange-deep); border-color: #cbd5e1; }
+        
+        .results { display: none; border-top: 1px dashed var(--border); padding-top: 24px; animation: fadeIn 0.3s ease-out; }
+        .results.visible { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .result-primary { background: var(--orange-pale); border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 16px; border: 1px solid #fed7aa; }
+        .result-primary small { font-size: 10px; font-weight: 700; color: var(--orange-deep); text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px; }
+        .result-primary .amount { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 900; color: var(--orange-deep); }
+        
+        .breakdown-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .breakdown-item.full { grid-column: span 2; display: flex; justify-content: space-between; align-items: center; background: var(--bg); padding: 14px; border-radius: 12px; border: 1px solid var(--border); }
+        .breakdown-item .label { font-size: 11px; color: var(--slate-mid); font-weight: 500; }
+        .breakdown-item .value { font-weight: 700; color: var(--slate); font-size: 14px; }
+        .highlight-row { background: var(--indigo) !important; border-color: var(--indigo) !important; color: white; }
+        .highlight-row .label { color: rgba(255,255,255,0.8); }
+        .highlight-row .value { color: white; }
+        
+        .footer { padding: 20px; background: var(--bg); text-align: center; font-size: 11px; color: var(--slate-light); border-top: 1px solid var(--border); font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="header">
+        <span><span class="logo-dot"></span>Premier Credit</span>
+        <h1>CS Loan Calculator</h1>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('tab1', this)">REPAYMENT</button>
+        <button class="tab-btn" onclick="switchTab('tab2', this)">QUALIFYING</button>
+    </div>
+
+    <div id="tab1" class="tab-content active">
+        <div class="clear-container">
+            <button class="btn-clear" onclick="clearFields('tab1')">Clear</button>
+        </div>
+        <div class="field-group">
+            <div class="field">
+                <label>Loan Amount (KES)</label>
+                <input type="number" id="t1-principal" placeholder="10,000" oninput="calculate()">
+            </div>
+            <div class="field">
+                <label>Loan Term (Months)</label>
+                <input type="number" id="t1-term" placeholder="120" oninput="calculate()">
+            </div>
+        </div>
+        
+        <div id="t1-results" class="results">
+            <div class="result-primary">
+                <small>Monthly Deduction</small>
+                <div class="amount" id="t1-monthly">KES 0.00</div>
+            </div>
+            <div class="breakdown-grid">
+                <div class="breakdown-item full"><span class="label">Total Interest</span><span class="value" id="t1-interest">KES 0.00</span></div>
+                <div class="breakdown-item full highlight-row"><span class="label">Total Repayment</span><span class="value" id="t1-total">KES 0.00</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab2" class="tab-content">
+        <div class="clear-container">
+            <button class="btn-clear" onclick="clearFields('tab2')">Clear</button>
+        </div>
+        <div class="field-group">
+            <div class="field">
+                <label>Monthly Deduction (Rounded KES)</label>
+                <input type="number" id="t2-deduction" placeholder="e.g. 2541" oninput="calculate()">
+            </div>
+            <div class="field">
+                <label>Desired Term (Months)</label>
+                <input type="number" id="t2-term" placeholder="120" oninput="calculate()">
+            </div>
+        </div>
+
+        <div id="t2-results" class="results">
+            <div class="result-primary">
+                <small>Qualifying Loan Amount</small>
+                <div class="amount" id="t2-qualify">KES 0.00</div>
+            </div>
+            <div class="breakdown-grid">
+                <div class="breakdown-item full"><span class="label">Total Interest</span><span class="value" id="t2-interest">KES 0.00</span></div>
+                <div class="breakdown-item full highlight-row"><span class="label">Total Repayment</span><span class="value" id="t2-total">KES 0.00</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">"Your Premier Choice...in Credit"</div>
+</div>
+
+<script>
+    const FIXED_FEE = 240, ONE_OFF_RATE = 0.125;
+    const RATE_TIERS = [
+        { max: 12, r: 1.06248 }, { max: 24, r: 0.860136 }, { max: 36, r: 0.704984 },
+        { max: 48, r: 0.55688 }, { max: 60, r: 0.519275 }, { max: 84, r: 0.462562 },
+        { max: 96, r: 0.452381 }, { max: 108, r: 0.4195 }, { max: 120, r: 0.4122 }
+    ];
+
+    const fmt = n => "KES " + n.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmtWhole = n => "KES " + Math.round(n).toLocaleString('en-KE');
+
+    function switchTab(id, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        btn.classList.add('active');
+        calculate();
+    }
+
+    function clearFields(tabId) {
+        if(tabId === 'tab1') {
+            document.getElementById('t1-principal').value = '';
+            document.getElementById('t1-term').value = '';
+            document.getElementById('t1-results').classList.remove('visible');
+        } else {
+            document.getElementById('t2-deduction').value = '';
+            document.getElementById('t2-term').value = '';
+            document.getElementById('t2-results').classList.remove('visible');
+        }
+    }
+
+    function calculate() {
+        const isTab1 = document.getElementById('tab1').classList.contains('active');
+        const termInput = document.getElementById(isTab1 ? 't1-term' : 't2-term').value;
+        const term = termInput ? parseInt(termInput) : 120;
+        if (term < 1) return;
+
+        const tier = RATE_TIERS.find(t => term <= t.max) || RATE_TIERS[RATE_TIERS.length - 1];
+        const i = tier.r / 12;
+        const factor = Math.pow(1 + i, term);
+
+        if (isTab1) {
+            const principalInput = document.getElementById('t1-principal').value;
+            const P = principalInput ? parseFloat(principalInput) : 10000;
+            const P_amort = P * (1 + ONE_OFF_RATE);
+            const M_amort = Math.round((P_amort * (i * factor) / (factor - 1)) * 100) / 100;
+            const M_regular = M_amort + FIXED_FEE;
+            
+            let currentBalance = P_amort;
+            for(let m = 1; m < term; m++) {
+                let interest = Math.round((currentBalance * i) * 100) / 100;
+                currentBalance -= (M_amort - interest);
+            }
+            const finalInstallment = Math.round((currentBalance + (currentBalance * i) + FIXED_FEE) * 100) / 100;
+            const totalRepayment = (M_regular * (term - 1)) + finalInstallment;
+
+            document.getElementById('t1-monthly').textContent = fmt(M_regular);
+            document.getElementById('t1-interest').textContent = fmt(totalRepayment - (P + (P * ONE_OFF_RATE) + (FIXED_FEE * term)));
+            document.getElementById('t1-total').textContent = fmt(totalRepayment);
+            document.getElementById('t1-results').classList.toggle('visible', !!principalInput);
+        } else {
+            const deductionInput = document.getElementById('t2-deduction').value;
+            if (!deductionInput) {
+                document.getElementById('t2-results').classList.remove('visible');
+                return;
+            }
+            const M_total = Math.round(parseFloat(deductionInput));
+            const M_amort = M_total - FIXED_FEE;
+            const P_amort = M_amort * (factor - 1) / (i * factor);
+            const P = Math.round(P_amort / (1 + ONE_OFF_RATE));
+
+            let currentBalance = P * (1 + ONE_OFF_RATE);
+            for(let m = 1; m < term; m++) {
+                let interest = Math.round((currentBalance * i) * 100) / 100;
+                currentBalance -= (M_amort - interest);
+            }
+            const finalInstallment = Math.round((currentBalance + (currentBalance * i) + FIXED_FEE) * 100) / 100;
+            const totalRepayment = (M_total * (term - 1)) + finalInstallment;
+
+            document.getElementById('t2-qualify').textContent = fmtWhole(P);
+            document.getElementById('t2-interest').textContent = fmt(totalRepayment - (P * (1 + ONE_OFF_RATE) + (FIXED_FEE * term)));
+            document.getElementById('t2-total').textContent = fmt(totalRepayment);
+            document.getElementById('t2-results').classList.add('visible');
+        }
+    }
+</script>
+</body>
+</html>
